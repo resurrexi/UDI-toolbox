@@ -35,7 +35,7 @@ class GUDID:
         return True
 
     def _validate_manage_draft_page(self):
-        wait = WebDriverWait(self._DRIVER, 30)
+        wait = WebDriverWait(self._DRIVER, 5)
 
         success = False
         while success is False:
