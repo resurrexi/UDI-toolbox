@@ -39,3 +39,11 @@ def check_digit_validator(digits):
         return True
     else:
         return False
+
+
+def generate_device_id(row, gs1, shelf=False, start=0, zeropad=3):
+    """Generate unique device id."""
+    device_id = '1' + str(gs1) + str(row.name + start).zfill(zeropad)
+    if shelf is True:
+        device_id = '3' + str(gs1) + str(row.name + start).zfill(zeropad)
+    return device_id + calc_check_digit(device_id)
