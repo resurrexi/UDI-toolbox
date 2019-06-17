@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
@@ -93,19 +94,57 @@ class GUDID:
     def load_draft_page(self):
         logging.info("Loading Draft DI page...")
 
-        self._DRIVER.find_element_by_name('homeForm:manageDraftLnk').click()
+        manage_dropdown = self._DRIVER.find_element_by_id(
+            'menuForm:mainMenuBar:manageDIs'
+        )
+        hover = ActionChains(self._DRIVER).move_to_element(manage_dropdown)
+        hover.perform()
+        self.sleep(1)
+
+        self._DRIVER.find_element_by_id(
+            'menuForm:mainMenuBar:manageDIs:draftDI:link'
+        ).click()
         assert 'Welcome' in self._DRIVER.title
-        header = self._DRIVER.find_element_by_css_selector('form>div>h2')
-        assert 'Manage Drafts' == header.text
+
+        success = False
+        while success is False:
+            try:
+                header = self._DRIVER.find_element_by_css_selector(
+                    'form>div>h2'
+                )
+                assert 'Manage Drafts' == header.text
+                success = True
+            except Exception:
+                self.sleep(1)
+
         return True
 
     def load_manage_page(self):
         logging.info("Loading Manage DI page...")
 
-        self._DRIVER.find_element_by_name('homeForm:manageDiLnk').click()
+        manage_dropdown = self._DRIVER.find_element_by_id(
+            'menuForm:mainMenuBar:manageDIs'
+        )
+        hover = ActionChains(self._DRIVER).move_to_element(manage_dropdown)
+        hover.perform()
+        self.sleep(1)
+
+        self._DRIVER.find_element_by_id(
+            'menuForm:mainMenuBar:manageDIs:submittedDI:link'
+        ).click()
         assert 'Welcome' in self._DRIVER.title
-        header = self._DRIVER.find_element_by_css_selector('form>div>h2')
-        assert 'Manage Device' == header.text
+
+        success = False
+        while success is False:
+            try:
+                header = self._DRIVER.find_element_by_css_selector(
+                    'form>div>h2'
+                )
+                assert 'Manage Device' == header.text
+                success = True
+            except Exception:
+                self.sleep(1)
+
         return True
 
     def load_new_device_page(self):
@@ -177,7 +216,7 @@ class GUDID:
         success = False
         while success is False:
             try:
-                device_ct = wait.until(EC.element_to_be_clickable(
+                device_ct = wait.until(EC.presence_of_element_located(
                     (By.NAME, 'diForm:in_deviceCount')
                 ))
                 device_ct.clear()
@@ -334,7 +373,7 @@ class GUDID:
         while success is False:
             try:
                 wait.until(EC.element_to_be_clickable(
-                    (By.NAME, 'diForm:__dc')
+                    (By.NAME, 'diForm:__df')
                 )).click()
                 self.sleep(1)
                 success = True
@@ -391,7 +430,7 @@ class GUDID:
         while success is False:
             try:
                 wait.until(EC.element_to_be_clickable(
-                    (By.NAME, 'diForm:__is')
+                    (By.NAME, 'diForm:__iv')
                 )).click()
                 self.sleep(1)
                 success = True
@@ -432,7 +471,7 @@ class GUDID:
         while success is False:
             try:
                 wait.until(EC.element_to_be_clickable(
-                    (By.NAME, 'diForm:__k1')
+                    (By.NAME, 'diForm:__k4')
                 )).click()
                 self.sleep(1)
                 success = True
@@ -473,7 +512,7 @@ class GUDID:
         while success is False:
             try:
                 wait.until(EC.element_to_be_clickable(
-                    (By.NAME, 'diForm:__lh')
+                    (By.NAME, 'diForm:__lk')
                 )).click()
                 self.sleep(1)
                 success = True
@@ -592,7 +631,7 @@ class GUDID:
                     'diForm:in_storageType'
                 )
                 store_drop.send_keys(Keys.TAB)
-                self.sleep(1)
+                self.sleep(2)
                 # validate
                 logging.info("Validating diForm:in_storageType")
                 val = store_drop.get_attribute('value')
@@ -625,7 +664,7 @@ class GUDID:
         while success is False:
             try:
                 wait.until(EC.element_to_be_clickable(
-                    (By.NAME, 'diForm:__tp')
+                    (By.NAME, 'diForm:__ts')
                 )).click()
                 self.sleep(1)
                 success = True
@@ -643,7 +682,7 @@ class GUDID:
                     'diForm:in_devicePackSterile'
                 )
                 sterile.send_keys(Keys.TAB)
-                self.sleep(1)
+                self.sleep(2)
                 # validate
                 logging.info("Validating diForm:in_devicePackSterile")
                 val = sterile.get_attribute('value')
@@ -662,8 +701,7 @@ class GUDID:
                 sterile_prior = self._DRIVER.find_element_by_name(
                     'diForm:in_reqSterilizationPriorToUse'
                 )
-                sterile_prior.send_keys(Keys.TAB)
-                self.sleep(1)
+                self.sleep(2)
                 # validate
                 logging.info("Validating diForm:in_reqSterilizationPriorToUse")
                 val = sterile_prior.get_attribute('value')
@@ -685,3 +723,63 @@ class GUDID:
                 self.sleep(1)
         self._validate_manage_draft_page()
         return True
+
+    def submit_all_device_drafts(self, pub_date):
+        wait = WebDriverWait(self._DRIVER, 5)
+
+        done = False
+        while done is False:
+            logging.info("Loading draft page...")
+            self.load_draft_page()
+
+            try:
+                logging.info("Locating draft record...")
+                self._DRIVER.find_element_by_name('diForm:diResultTbl:0:diLnk') \
+                    .click()
+                self.sleep(1)
+            except Exception:
+                done = True
+                continue
+
+            # effective date
+            success = False
+            while success is False:
+                try:
+                    publish_dt = wait.until(EC.element_to_be_clickable(
+                        (By.NAME, 'diForm:in_effectiveDate')
+                    ))
+                    publish_dt.clear()
+                    publish_dt.send_keys(pub_date)
+                    publish_dt.send_keys(Keys.TAB)
+                    self.sleep(1)
+                    # validate
+                    logging.info("Validating diForm:in_effectiveDate")
+                    val = publish_dt.get_attribute('value')
+                    if str(val) == pub_date:
+                        success = True
+                except Exception:
+                    self.sleep(1)
+
+            # review button
+            success = False
+            while success is False:
+                try:
+                    self._DRIVER.find_element_by_name('diForm:topReviewBtn') \
+                        .click()
+                    self.sleep(1)
+                    success = True
+                except Exception:
+                    self.sleep(1)
+
+            # submit button
+            success = False
+            while success is False:
+                try:
+                    self._DRIVER.find_element_by_name('diForm:topSubmitBtn') \
+                        .click()
+                    self.sleep(1)
+                    success = True
+                except Exception:
+                    self.sleep(1)
+
+            self._validate_manage_draft_page()
