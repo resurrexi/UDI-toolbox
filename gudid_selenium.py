@@ -729,7 +729,6 @@ class GUDID:
 
         done = False
         while done is False:
-            logging.info("Loading draft page...")
             self.load_draft_page()
 
             try:
