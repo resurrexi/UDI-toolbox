@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import time
 import logging
+import re
 
 
 class GUDID:
@@ -415,7 +416,7 @@ class GUDID:
                     (By.NAME, 'diForm:in_FDAproductCode')
                 ))
                 fda_code.clear()
-                fda_code.send_keys('MQH')
+                fda_code.send_keys('PUC')  # PUC is for pre-market exempt products, not MQH
                 fda_code.send_keys(Keys.TAB)
                 self.sleep(1)
                 # validate
@@ -782,3 +783,26 @@ class GUDID:
                     self.sleep(1)
 
             self._validate_manage_draft_page()
+
+    def get_records(self):
+        """Assumes browser is on manage records page."""
+        records = self._DRIVER.find_elements_by_xpath(
+            "//a[contains(@id, 'diForm:diResultTbl') and contains(@title, 'View ')]"
+        )
+        return records
+
+    def get_records_count(self):
+        """Assumes browser is on manage records page."""
+        record_text = self._DRIVER.find_element_by_xpath(
+            "//span[@class='pagination_info' and contains(@id, 'diForm')]"
+        ).text
+        record_ct = int(re.search(r"(\d+) record", record_text).groups()[0])
+        return record_ct
+
+    def get_next_page(self):
+        """Assumes browser is on manage records page."""
+        wait = WebDriverWait(self._DRIVER, 5)
+
+        wait.until(EC.element_to_be_clickable(
+            (By.XPATH, "//a[@class='pg_lnk pf_next' and @title='Next Page']")
+        )).click()
