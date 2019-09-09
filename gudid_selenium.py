@@ -422,7 +422,7 @@ class GUDID:
                 # validate
                 logging.info("Validating diForm:in_FDAproductCode")
                 val = fda_code.get_attribute('value')
-                if val == 'MQH':
+                if val == 'PUC':
                     success = True
             except Exception:
                 self.sleep(1)
@@ -784,25 +784,146 @@ class GUDID:
 
             self._validate_manage_draft_page()
 
-    def get_records(self):
-        """Assumes browser is on manage records page."""
-        records = self._DRIVER.find_elements_by_xpath(
-            "//a[contains(@id, 'diForm:diResultTbl') and contains(@title, 'View ')]"
-        )
-        return records
-
-    def get_records_count(self):
-        """Assumes browser is on manage records page."""
-        record_text = self._DRIVER.find_element_by_xpath(
-            "//span[@class='pagination_info' and contains(@id, 'diForm')]"
-        ).text
-        record_ct = int(re.search(r"(\d+) record", record_text).groups()[0])
-        return record_ct
-
-    def get_next_page(self):
+    def find_record(self, di):
         """Assumes browser is on manage records page."""
         wait = WebDriverWait(self._DRIVER, 5)
 
-        wait.until(EC.element_to_be_clickable(
-            (By.XPATH, "//a[@class='pg_lnk pf_next' and @title='Next Page']")
-        )).click()
+        # enter di in input
+        success = False
+        while success is False:
+            try:
+                di_input = wait.until(EC.presence_of_element_located(
+                    (By.NAME, "diForm:di_in")
+                ))
+                di_input.clear()
+                di_input.send_keys(str(di))
+                di_input.send_keys(Keys.TAB)
+                self.sleep(1)
+                # validate
+                logging.info("Validating diForm:di_in")
+                val = di_input.get_attribute('value')
+                if str(val) == str(di):
+                    success = True
+            except Exception:
+                self.sleep(1)
+
+        # filter
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.NAME, "diForm:filterBtn")
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+        # click on record
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.NAME, "diForm:diResultTbl:0:diLnk")
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+    def edit_record(self):
+        """Assumes browser is on record details page."""
+        wait = WebDriverWait(self._DRIVER, 30)
+
+        # enable edit mode
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.XPATH, "//a[@id='diForm:topEditBtn' and @title='Edit']")
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+        # expand status info panel
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.ID, 'diForm:productStatusInfoPanel_toggler')
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+        # edit product code button
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.XPATH, "//a[contains(@id, 'editProductCodeLnk') and contains(@title, 'Edit Product Code')]")
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+        # edit product code input
+        success = False
+        while success is False:
+            try:
+                fda_code = wait.until(EC.presence_of_element_located(
+                    (By.NAME, 'diForm:in_FDAproductCode')
+                ))
+                fda_code.clear()
+                fda_code.send_keys('PUC')  # PUC is for pre-market exempt products, not MQH
+                fda_code.send_keys(Keys.TAB)
+                self.sleep(1)
+                # validate
+                logging.info("Validating diForm:in_FDAproductCode")
+                val = fda_code.get_attribute('value')
+                if val == 'PUC':
+                    success = True
+            except Exception:
+                self.sleep(1)
+
+        # update button
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.XPATH, "//a[@class='btn btn_grey' and contains(@id, 'diForm') and @title='Update']")
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+        # review button
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.NAME, 'diForm:topReviewBtn')
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+        # submit button
+        success = False
+        while success is False:
+            try:
+                wait.until(EC.element_to_be_clickable(
+                    (By.NAME, 'diForm:topSubmitBtn')
+                )).click()
+                self.sleep(1)
+                success = True
+            except Exception:
+                self.sleep(1)
+
+        self._validate_manage_draft_page()
